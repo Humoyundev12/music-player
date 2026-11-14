@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FaPlay,
   FaPause,
@@ -11,10 +11,13 @@ import {
   FaRandom,
   FaRedo,
   FaRegComment,
+  FaLanguage,
+  FaChevronUp,
+  FaChevronDown,
 } from 'react-icons/fa';
 import { resolveMediaUrl, DEFAULT_COVERS } from '../services/api';
+import { useTranslate } from '../hooks/useTranslate';
 
-// Vaqtni MM:SS ko'rinishida formatlash
 const formatTime = (timeInSeconds) => {
   if (isNaN(timeInSeconds) || timeInSeconds < 0) return '00:00';
   const minutes = Math.floor(timeInSeconds / 60);
@@ -27,6 +30,7 @@ const AudioPlayer = ({
   songsList = [],
   onToggleLike,
   onOpenComment,
+  onOpenLyrics,
   commentCount = 0,
 }) => {
   const {
@@ -49,7 +53,27 @@ const AudioPlayer = ({
     prevSong,
   } = player;
 
+  const { t } = useTranslate();
   const [imageError, setImageError] = useState(false);
+  const [subtitleExpanded, setSubtitleExpanded] = useState(true);
+  const [activeLyricIndex, setActiveLyricIndex] = useState(0);
+
+  // Vaqt o'tishi bilan matn qatorini sinxronlashtirish / almashtirish
+  useEffect(() => {
+    if (!currentSong?.lyrics || currentSong.lyrics.length === 0) {
+      setActiveLyricIndex(0);
+      return;
+    }
+    const totalLines = currentSong.lyrics.length;
+    if (duration > 0 && currentTime > 0) {
+      const lineDuration = duration / totalLines;
+      const calculatedIndex = Math.min(
+        totalLines - 1,
+        Math.floor(currentTime / Math.max(1, lineDuration))
+      );
+      setActiveLyricIndex(calculatedIndex);
+    }
+  }, [currentTime, duration, currentSong]);
 
   if (!currentSong) return null;
 
@@ -59,10 +83,46 @@ const AudioPlayer = ({
     : resolveMediaUrl(currentSong.cover_url, 'cover', currentSong.id);
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const isForeign = currentSong.language && currentSong.language !== 'uz';
+  const currentLyric = currentSong.lyrics && currentSong.lyrics[activeLyricIndex];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-2xl transition-all">
       
+      {/* 1. RUSCHA YOKI CHET TILI QO'SHIQLARI UCHUN JONLI SUBTITR VA O'ZBEKCHA TARJIMA SAHNASI */}
+      {isForeign && currentLyric && (
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border-b border-indigo-500/30 px-4 py-2 transition-all">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-white shrink-0 flex items-center gap-1 shadow-sm">
+                <FaLanguage /> 
+                {currentSong.language === 'ru' ? '🇷🇺 Ruscha' : '🇬🇧 Inglizcha'} ➔ 🇺🇿 O'zbekcha
+              </span>
+
+              {/* Subtitr va pastida tarjimasi */}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white truncate leading-tight">
+                  "{currentLyric.original}"
+                </p>
+                <p className="text-[11px] font-semibold text-emerald-400 truncate leading-tight italic mt-0.5">
+                  👉 Tarjimasi: "{currentLyric.translation}"
+                </p>
+              </div>
+            </div>
+
+            {/* Barcha matnni to'liq ko'rish tugmasi */}
+            <button
+              onClick={() => onOpenLyrics(currentSong)}
+              className="shrink-0 px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-[11px] font-bold text-white flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+            >
+              <span>To'liq tarjima</span>
+            </button>
+
+          </div>
+        </div>
+      )}
+
       {/* Audio xatolik xabari */}
       {audioError && (
         <div className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs px-4 py-1 text-center font-medium border-b border-amber-500/20">
@@ -70,10 +130,10 @@ const AudioPlayer = ({
         </div>
       )}
 
-      {/* Progress slider (Mobil uchun tepada nozik ko'rsatish) */}
+      {/* Progress slider */}
       <div className="relative w-full h-1 group cursor-pointer bg-slate-200 dark:bg-slate-800">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 relative transition-all"
+          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative transition-all"
           style={{ width: `${progressPercent}%` }}
         >
           <div className="opacity-0 group-hover:opacity-100 absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md transition-opacity" />
@@ -88,20 +148,27 @@ const AudioPlayer = ({
         />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-6">
         
         {/* Chap qism: Musiqa rasmi, nomi, ijrochi va like */}
-        <div className="flex items-center gap-3 min-w-0 max-w-[40%] sm:max-w-[30%]">
+        <div className="flex items-center gap-3 min-w-0 max-w-[42%] sm:max-w-[30%]">
           <img
             src={coverUrl}
             alt={currentSong.title}
             onError={() => setImageError(true)}
-            className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0"
+            className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-800"
           />
           <div className="min-w-0">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-              {currentSong.title}
-            </h4>
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                {currentSong.title}
+              </h4>
+              {isForeign && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  {currentSong.language === 'ru' ? '🇷🇺 Rus' : '🇬🇧 Ing'}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
               {currentSong.artist}
             </p>
@@ -123,8 +190,6 @@ const AudioPlayer = ({
 
         {/* Markaziy qism: Boshqaruv tugmalari va vaqt chizig'i */}
         <div className="flex-1 max-w-xl flex flex-col items-center">
-          
-          {/* Boshqaruv tugmalari */}
           <div className="flex items-center gap-2 sm:gap-5 mb-1">
             
             {/* Shuffle */}
@@ -149,7 +214,7 @@ const AudioPlayer = ({
               <FaStepBackward className="text-sm" />
             </button>
 
-            {/* Play / Pause (Katta dumaloq tugma) */}
+            {/* Play / Pause */}
             <button
               onClick={togglePlay}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 active:scale-95 transition-all"
@@ -187,7 +252,7 @@ const AudioPlayer = ({
             <span>{formatTime(currentTime)}</span>
             <div className="flex-1 relative h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-indigo-600 rounded-full"
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -196,10 +261,26 @@ const AudioPlayer = ({
 
         </div>
 
-        {/* O'ng qism: Izohlar va Ovoz (Volume) */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        {/* O'ng qism: Matn va Tarjima, Izohlar va Ovoz */}
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           
-          {/* Joriy qo'shiq uchun izohlar tugmasi */}
+          {/* Matn va Tarjima tugmasi */}
+          <button
+            onClick={() => onOpenLyrics(currentSong)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              isForeign
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                : 'text-slate-500 hover:text-indigo-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+            title="Qo'shiq matni va o'zbekcha tarjimasini ko'rish"
+          >
+            <FaLanguage className="text-base" />
+            <span className="hidden md:inline">
+              {isForeign ? "Tarjimasi" : "Matni"}
+            </span>
+          </button>
+
+          {/* Izohlar tugmasi */}
           <button
             onClick={() => onOpenComment(currentSong)}
             className="flex items-center gap-1.5 p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
@@ -227,7 +308,7 @@ const AudioPlayer = ({
               step={0.02}
               value={isMuted ? 0 : volume}
               onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-20 accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+              className="w-16 accent-indigo-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
             />
           </div>
 
