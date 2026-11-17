@@ -1,7 +1,7 @@
 export const translations = {
   uz: {
     // Navbar
-    app_title: "SoundWave",
+    app_title: "HB Music",
     songs_count: "ta musiqa",
     search_placeholder: "Qo'shiq, ijrochi yoki janr qidirish...",
     liked_songs: "Yoqtirilganlar",
@@ -103,7 +103,7 @@ export const translations = {
 
   ru: {
     // Navbar
-    app_title: "SoundWave",
+    app_title: "HB Music",
     songs_count: "треков",
     search_placeholder: "Поиск песни, исполнителя или жанра...",
     liked_songs: "Избранное",
@@ -205,7 +205,7 @@ export const translations = {
 
   en: {
     // Navbar
-    app_title: "SoundWave",
+    app_title: "HB Music",
     songs_count: "tracks",
     search_placeholder: "Search song, artist, or genre...",
     liked_songs: "Favorites",

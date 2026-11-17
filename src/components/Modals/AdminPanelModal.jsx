@@ -52,8 +52,8 @@ const AdminPanelModal = ({
         {/* Modal Tepa qismi */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
-              <FaCrown className="text-lg" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-amber-500/20 ring-2 ring-amber-500/30 shrink-0">
+              <img src="/logo.png" alt="HB Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="flex items-center gap-2">

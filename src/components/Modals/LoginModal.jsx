@@ -57,15 +57,15 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Yuqori sarlavha */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md">
-              <FaShieldAlt className="text-lg" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-amber-500/20 ring-2 ring-amber-500/30 shrink-0">
+              <img src="/logo.png" alt="HB Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('login_title', 'Tizimga kirish')}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t('login_subtitle', 'Foydalanuvchi yoki Admin sifatida kiring')}
+                HB Music — Shaxsiy hisobingizga kiring
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 active:scale-98 transition-all"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-98 transition-all"
             >
               {t('submit_login', 'Tizimga kirish')}
             </button>

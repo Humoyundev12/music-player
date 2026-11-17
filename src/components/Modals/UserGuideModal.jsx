@@ -37,15 +37,15 @@ const UserGuideModal = ({
         {/* Modal Tepa qismi */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md">
-              <FaBookOpen className="text-lg" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-amber-500/20 ring-2 ring-amber-500/30 shrink-0">
+              <img src="/logo.png" alt="HB Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('guide_title', "Saytdan foydalanish qismi va Profil")}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Imkoniyatlar, qoidalar va shaxsiy hisobingiz
+                HB Music — Imkoniyatlar, qoidalar va shaxsiy hisobingiz
               </p>
             </div>
           </div>

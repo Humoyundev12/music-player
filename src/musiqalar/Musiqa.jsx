@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import GenreFilter from '../components/GenreFilter';
 import SongCard from '../components/SongCard';
 import AudioPlayer from '../components/AudioPlayer';
+import MobileBottomNav from '../components/MobileBottomNav';
 import AddSongModal from '../components/Modals/AddSongModal';
 import CommentModal from '../components/Modals/CommentModal';
 import LoginModal from '../components/Modals/LoginModal';
@@ -24,7 +25,6 @@ import {
   FaRedo,
   FaLanguage,
   FaCrown,
-  FaCheckCircle,
 } from 'react-icons/fa';
 
 const Musiqa = () => {
@@ -34,7 +34,7 @@ const Musiqa = () => {
   // 2. Auth tizimi (Foydalanuvchi: Muhammad, Admin: Humoyun)
   const { currentUser, isAdmin, isLoggedIn } = useAuth();
 
-  // 3. Til tarjimasi hooki (useTranslate)
+  // 3. Til tarjimasi hooki
   const { t, lang } = useTranslate();
 
   // 4. Qo'shiqlar va kutubxona
@@ -73,6 +73,9 @@ const Musiqa = () => {
   const [activeCommentSong, setActiveCommentSong] = useState(null);
   const [activeLyricsSong, setActiveLyricsSong] = useState(null);
 
+  // Qidiruv input refi (mobil navigatsiyadan fokuslash uchun)
+  const searchInputRef = useRef(null);
+
   // Ruscha / Chet tili tanlangandagi xabarnoma (Toast)
   const [foreignAlert, setForeignAlert] = useState(null);
 
@@ -91,10 +94,19 @@ const Musiqa = () => {
     }
   };
 
+  const handleFocusSearch = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 250);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       
-      {/* Yuqori Navbar */}
+      {/* Yuqori Navbar (HB Logo bilan) */}
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -108,36 +120,37 @@ const Musiqa = () => {
         isDark={isDark}
         toggleTheme={toggleTheme}
         totalSongs={songs.length}
+        searchInputRef={searchInputRef}
       />
 
       {/* Chet tilidagi qo'shiq tanlangandagi maxsus xabarnoma */}
       {foreignAlert && (
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white px-4 py-2.5 shadow-md sticky top-20 z-30 animate-in slide-in-from-top duration-300">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs font-semibold">
-            <div className="flex items-center gap-2">
-              <FaLanguage className="text-base shrink-0 animate-bounce" />
-              <span>✨ {foreignAlert.message}</span>
+        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-3 sm:px-4 py-2 sm:py-2.5 shadow-md sticky top-16 sm:top-20 z-30 animate-in slide-in-from-top duration-300">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs font-semibold">
+            <div className="flex items-center gap-2 truncate">
+              <FaLanguage className="text-base shrink-0 animate-bounce text-amber-200" />
+              <span className="truncate">✨ {foreignAlert.message}</span>
             </div>
             <button
               onClick={() => setForeignAlert(null)}
-              className="text-white/80 hover:text-white px-2 py-0.5 rounded-lg bg-black/20 text-[11px]"
+              className="text-white/90 hover:text-white px-2 py-0.5 rounded-lg bg-black/20 text-[11px] shrink-0"
             >
-              ✕ Yopish
+              ✕
             </button>
           </div>
         </div>
       )}
 
-      {/* Asosiy kontent maydoni */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-40">
+      {/* Asosiy kontent maydoni (Mobil va Desktop uchun qulay padding) */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-44 sm:pb-36">
         
         {/* Banner va tab sarlavhasi */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+              <h1 className="text-xl sm:text-3xl font-black tracking-tight">
                 {showOnlyLiked ? (
-                  <span className="flex items-center gap-2.5 text-rose-500">
+                  <span className="flex items-center gap-2 text-rose-500">
                     <FaHeart /> {t('liked_title', 'Yoqtirilgan musiqalar')}
                   </span>
                 ) : (
@@ -147,17 +160,17 @@ const Musiqa = () => {
 
               {/* Hozirgi foydalanuvchi ma'lumoti */}
               {isLoggedIn && (
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm ${
+                <span className={`text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-bold shadow-sm ${
                   isAdmin
-                    ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300'
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
                     : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
                 }`}>
-                  {isAdmin ? '👑 Humoyun (Admin)' : '👤 Muhammad (Foydalanuvchi)'}
+                  {isAdmin ? '👑 Humoyun' : '👤 Muhammad'}
                 </span>
               )}
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400">
               {showOnlyLiked
                 ? `${likedCount} ta sevimli qo'shiqlaringiz`
                 : t('collection_subtitle', "Eng sara treklarni tinglang, yoqtiring va ruscha/xorijiy qo'shiqlarning o'zbekcha tarjimasini o'qing")}
@@ -180,17 +193,17 @@ const Musiqa = () => {
 
         {/* Yuklanish holati */}
         {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="animate-pulse flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                className="animate-pulse flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
               >
-                <div className="w-24 h-24 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
                   <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                  <div className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
                 </div>
               </div>
             ))}
@@ -209,7 +222,7 @@ const Musiqa = () => {
             </p>
             <button
               onClick={reloadSongs}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md active:scale-95 transition-all"
             >
               <FaRedo className="text-xs" /> Qayta urinib ko'rish
             </button>
@@ -218,7 +231,7 @@ const Musiqa = () => {
 
         {/* Bo'sh ro'yxat */}
         {!loading && !error && filteredSongs.length === 0 && (
-          <div className="text-center py-16 px-4">
+          <div className="text-center py-12 sm:py-16 px-4">
             <div className="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center mb-4">
               <FaMusic className="text-2xl" />
             </div>
@@ -235,14 +248,14 @@ const Musiqa = () => {
             {showOnlyLiked ? (
               <button
                 onClick={() => setShowOnlyLiked(false)}
-                className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all shadow-md"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
               >
                 {t('view_all', 'Barcha musiqalarni ko\'rish')}
               </button>
             ) : (
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all shadow-md"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
               >
                 + {t('add_song', "Yangi musiqa qo'shish")}
               </button>
@@ -250,9 +263,9 @@ const Musiqa = () => {
           </div>
         )}
 
-        {/* Musiqalar ro'yxati (Grid) */}
+        {/* Musiqalar ro'yxati (Grid / Horizontal modern list) */}
         {!loading && filteredSongs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
             {filteredSongs.map((song) => {
               const isCurrent = player.currentSong?.id === song.id;
               const isPlayingCurrent = isCurrent && player.isPlaying;
@@ -278,7 +291,7 @@ const Musiqa = () => {
 
       </main>
 
-      {/* Pastki Audio Player va jonli tarjima paneli */}
+      {/* Audio Player (Desktopda to'liq bar, Mobil telefonlarda ixcham mini-player & to'liq sheet) */}
       <AudioPlayer
         player={player}
         songsList={filteredSongs.length > 0 ? filteredSongs : songs}
@@ -286,6 +299,16 @@ const Musiqa = () => {
         onOpenComment={(selected) => setActiveCommentSong(selected)}
         onOpenLyrics={(selected) => setActiveLyricsSong(selected)}
         commentCount={player.currentSong ? getCommentCount(player.currentSong.id) : 0}
+      />
+
+      {/* Mobil telefonlar uchun qulay pastki navigatsiya (Asosiy, Sevimlilar, Qo'shish, Qidiruv, Profil) */}
+      <MobileBottomNav
+        showOnlyLiked={showOnlyLiked}
+        setShowOnlyLiked={setShowOnlyLiked}
+        likedCount={likedCount}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
+        onOpenGuide={() => setIsGuideModalOpen(true)}
+        onFocusSearch={handleFocusSearch}
       />
 
       {/* Musiqa qo'shish modali (Faqat admin qo'sha oladi) */}
