@@ -8,6 +8,8 @@ const GenreFilter = ({
   onSelectGenre,
   selectedLanguage,
   onSelectLanguage,
+  showOnlyTrending,
+  onToggleTrending,
 }) => {
   const { t } = useTranslate();
 
@@ -21,8 +23,24 @@ const GenreFilter = ({
 
   return (
     <div className="space-y-2">
-      {/* Tillar va Tarjima filtri */}
+      {/* Tillar va Trend filtri */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none no-scrollbar -mx-1 px-1">
+        
+        {/* 🔥 Trenddagi qo'shiqlar tugmasi */}
+        {onToggleTrending && (
+          <button
+            onClick={onToggleTrending}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all duration-200 border flex items-center gap-1.5 active:scale-95 ${
+              showOnlyTrending
+                ? 'bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 text-white border-transparent shadow-lg shadow-rose-500/30 ring-2 ring-orange-400 scale-[1.02]'
+                : 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60 border-orange-200 dark:border-orange-800/60'
+            }`}
+          >
+            <FaFire className={showOnlyTrending ? 'text-amber-200 animate-bounce' : 'text-orange-500'} />
+            <span>🔥 Trenddagi qo'shiqlar</span>
+          </button>
+        )}
+
         {langFilters.map((lf) => {
           const isSelected = selectedLanguage === lf.id;
           return (

@@ -19,10 +19,11 @@ const UserGuideModal = ({
   isOpen,
   onClose,
   onOpenLogin,
+  onOpenInstagramProfile,
   likedCount = 0,
   totalSongs = 0,
 }) => {
-  const { currentUser, logout, isAdmin, isLoggedIn } = useAuth();
+  const { currentUser, logout, isAdmin, isLoggedIn, updateUserProfile } = useAuth();
   const { t } = useTranslate();
   const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'profile'
 
@@ -174,57 +175,44 @@ const UserGuideModal = ({
             <div className="space-y-5">
               {isLoggedIn ? (
                 <div className="space-y-4">
-                  {/* Profil kartochkasi */}
-                  <div className="flex items-center gap-4 p-5 rounded-3xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-200 dark:border-indigo-900/50">
-                    <img
-                      src={currentUser.avatar}
-                      alt={currentUser.name}
-                      className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-800"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                          {currentUser.name}
-                        </h3>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          isAdmin
-                            ? 'bg-purple-600 text-white shadow-sm'
-                            : 'bg-emerald-600 text-white shadow-sm'
-                        }`}>
-                          {isAdmin ? '👑 Admin' : '👤 Foydalanuvchi'}
-                        </span>
+                  {/* Instagram uslubidagi profil taklifi */}
+                  <div className="p-6 rounded-3xl bg-black border border-neutral-800 text-white space-y-4">
+                    <div className="flex items-center gap-4">
+                      {/* Instagram gradient halqali avatar */}
+                      <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 shrink-0">
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name}
+                          className="w-full h-full rounded-full object-cover border-2 border-black"
+                        />
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Login: <code className="font-mono">{currentUser.username}</code> • Status: Faol
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Statistika kartochkalari */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
-                      <FaHeadphones className="text-indigo-600 dark:text-indigo-400 text-xl mx-auto mb-1" />
-                      <span className="block text-lg font-extrabold text-slate-900 dark:text-white">
-                        {totalSongs}
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Musiqalar</span>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
-                      <FaHeart className="text-rose-500 text-xl mx-auto mb-1" />
-                      <span className="block text-lg font-extrabold text-slate-900 dark:text-white">
-                        {likedCount}
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Yoqtirilgan</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-white truncate">
+                            {currentUser.displayName || currentUser.username}
+                          </h3>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isAdmin ? 'bg-purple-900/60 text-purple-300' : 'bg-emerald-900/60 text-emerald-300'
+                          }`}>
+                            {isAdmin ? '👑 Admin' : '👤 User'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-400 truncate mt-0.5">
+                          {currentUser.name} • {currentUser.bio || 'Musiqa shaydosi'}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
-                      <FaCrown className="text-amber-500 text-xl mx-auto mb-1" />
-                      <span className="block text-lg font-extrabold text-slate-900 dark:text-white">
-                        {isAdmin ? 'Cheksiz' : 'Oddiy'}
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Ruxsat</span>
-                    </div>
+                    {/* Instagram uslubidagi to'liq profilga kirish */}
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onOpenInstagramProfile) onOpenInstagramProfile();
+                      }}
+                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-95 text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <span>📸 Instagram Uslubidagi To'liq Profilni Ochish</span>
+                    </button>
                   </div>
 
                   {/* Chiqish yoki boshqa profilga o'tish */}

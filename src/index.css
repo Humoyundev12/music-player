@@ -55,6 +55,16 @@
   50% { height: 16px; }
 }
 
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(20%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-indeterminate {
+  animation: indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+
 .animate-bar-1 {
   animation: barBounce 0.8s ease-in-out infinite;
 }

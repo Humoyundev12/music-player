@@ -4,6 +4,10 @@ import GenreFilter from '../components/GenreFilter';
 import SongCard from '../components/SongCard';
 import AudioPlayer from '../components/AudioPlayer';
 import MobileBottomNav from '../components/MobileBottomNav';
+import OfflineLoader from '../components/OfflineLoader';
+import NextFooter from '../components/NextFooter';
+import InstagramProfileModal from '../components/InstagramProfileModal';
+
 import AddSongModal from '../components/Modals/AddSongModal';
 import CommentModal from '../components/Modals/CommentModal';
 import LoginModal from '../components/Modals/LoginModal';
@@ -25,14 +29,16 @@ import {
   FaRedo,
   FaLanguage,
   FaCrown,
+  FaFire,
+  FaPlay,
 } from 'react-icons/fa';
 
 const Musiqa = () => {
   // 1. Dark / Light rejim
   const { isDark, toggleTheme } = useTheme();
 
-  // 2. Auth tizimi (Foydalanuvchi: Muhammad, Admin: Humoyun)
-  const { currentUser, isAdmin, isLoggedIn } = useAuth();
+  // 2. Auth tizimi va harakatlarni kuzatish (Monitoring)
+  const { currentUser, isAdmin, isLoggedIn, trackPlay, trackLike } = useAuth();
 
   // 3. Til tarjimasi hooki
   const { t, lang } = useTranslate();
@@ -52,6 +58,8 @@ const Musiqa = () => {
     setSelectedLanguage,
     showOnlyLiked,
     setShowOnlyLiked,
+    showOnlyTrending,
+    setShowOnlyTrending,
     likedCount,
     toggleLike,
     addSong,
@@ -69,6 +77,7 @@ const Musiqa = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [isInstagramProfileOpen, setIsInstagramProfileOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [activeCommentSong, setActiveCommentSong] = useState(null);
   const [activeLyricsSong, setActiveLyricsSong] = useState(null);
@@ -79,9 +88,10 @@ const Musiqa = () => {
   // Ruscha / Chet tili tanlangandagi xabarnoma (Toast)
   const [foreignAlert, setForeignAlert] = useState(null);
 
-  // Qo'shiqni tanlash va ijro etish
+  // Qo'shiqni tanlash va ijro etish (monitoring bilan)
   const handlePlaySong = (song) => {
     player.playSong(song);
+    trackPlay(song);
 
     // Agar ruscha yoki boshqa tildagi qo'shiq tanlansa, pastida tarjima chiqishi haqida xabar ko'rsatiladi
     if (song.language && song.language !== 'uz') {
@@ -94,6 +104,16 @@ const Musiqa = () => {
     }
   };
 
+  // Like bosish (monitoring bilan)
+  const handleToggleLike = (songId) => {
+    const song = songs.find((s) => s.id === songId || String(s.id) === String(songId));
+    const willBeLiked = !song?.liked;
+    toggleLike(songId);
+    if (song) {
+      trackLike(song, willBeLiked);
+    }
+  };
+
   const handleFocusSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
@@ -103,19 +123,34 @@ const Musiqa = () => {
     }, 250);
   };
 
+  // Top trend qo'shiqlar (Shelf uchun)
+  const topTrendingSongs = songs
+    .filter((s) => s.isTrending || Number(s.plays) >= 900)
+    .sort((a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0))
+    .slice(0, 8);
+
+  // Yoqtirilgan qo'shiqlar obyektlari
+  const likedSongsList = songs.filter((s) => s.liked);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       
-      {/* Yuqori Navbar (HB Logo bilan) */}
+      {/* 1. Offline & Loading Ekran (Internet ishlamay qolsa loading... chiqsin) */}
+      <OfflineLoader />
+
+      {/* 2. Yuqori Navbar (HB Logo bilan) */}
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showOnlyLiked={showOnlyLiked}
         setShowOnlyLiked={setShowOnlyLiked}
+        showOnlyTrending={showOnlyTrending}
+        setShowOnlyTrending={setShowOnlyTrending}
         likedCount={likedCount}
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenLogin={() => setIsLoginModalOpen(true)}
         onOpenGuide={() => setIsGuideModalOpen(true)}
+        onOpenProfile={() => setIsInstagramProfileOpen(true)}
         onOpenAdminPanel={() => setIsAdminPanelOpen(true)}
         isDark={isDark}
         toggleTheme={toggleTheme}
@@ -141,15 +176,19 @@ const Musiqa = () => {
         </div>
       )}
 
-      {/* Asosiy kontent maydoni (Mobil va Desktop uchun qulay padding) */}
+      {/* Asosiy kontent maydoni */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-44 sm:pb-36">
         
-        {/* Banner va tab sarlavhasi */}
+        {/* Banner va Tab sarlavhasi */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
             <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
               <h1 className="text-xl sm:text-3xl font-black tracking-tight">
-                {showOnlyLiked ? (
+                {showOnlyTrending ? (
+                  <span className="flex items-center gap-2 bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 bg-clip-text text-transparent">
+                    <FaFire className="text-orange-500" /> Trenddagi qo'shiqlar
+                  </span>
+                ) : showOnlyLiked ? (
                   <span className="flex items-center gap-2 text-rose-500">
                     <FaHeart /> {t('liked_title', 'Yoqtirilgan musiqalar')}
                   </span>
@@ -160,24 +199,30 @@ const Musiqa = () => {
 
               {/* Hozirgi foydalanuvchi ma'lumoti */}
               {isLoggedIn && (
-                <span className={`text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-bold shadow-sm ${
-                  isAdmin
-                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
-                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
-                }`}>
-                  {isAdmin ? '👑 Humoyun' : '👤 Muhammad'}
-                </span>
+                <button
+                  onClick={() => setIsInstagramProfileOpen(true)}
+                  className={`text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full font-bold shadow-sm hover:scale-105 transition-all ${
+                    isAdmin
+                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
+                      : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
+                  }`}
+                  title="Instagram Profilni ochish"
+                >
+                  {isAdmin ? '👑 Humoyun (Admin)' : `👤 ${currentUser.name}`}
+                </button>
               )}
             </div>
 
             <p className="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400">
-              {showOnlyLiked
+              {showOnlyTrending
+                ? `Eng ko'p tinglangan va top o'rinlardagi trend xitlar`
+                : showOnlyLiked
                 ? `${likedCount} ta sevimli qo'shiqlaringiz`
                 : t('collection_subtitle', "Eng sara treklarni tinglang, yoqtiring va ruscha/xorijiy qo'shiqlarning o'zbekcha tarjimasini o'qing")}
             </p>
           </div>
 
-          {/* Janrlar va Til filtrlari */}
+          {/* Janrlar, Tillar va Trend filtrlari */}
           {!showOnlyLiked && (
             <div className="w-full md:w-auto">
               <GenreFilter
@@ -186,10 +231,68 @@ const Musiqa = () => {
                 onSelectGenre={setSelectedGenre}
                 selectedLanguage={selectedLanguage}
                 onSelectLanguage={setSelectedLanguage}
+                showOnlyTrending={showOnlyTrending}
+                onToggleTrending={() => {
+                  setShowOnlyTrending(!showOnlyTrending);
+                  if (showOnlyLiked) setShowOnlyLiked(false);
+                }}
               />
             </div>
           )}
         </div>
+
+        {/* TOP TREND DAGI ENG SARA QO'SHIQLAR CAROUSEL / SHELF */}
+        {!showOnlyTrending && !showOnlyLiked && !searchQuery && topTrendingSongs.length > 0 && (
+          <div className="mb-6 p-4 rounded-3xl bg-gradient-to-r from-orange-500/10 via-rose-500/10 to-amber-500/10 border border-orange-200/80 dark:border-orange-900/40">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FaFire className="text-orange-500 text-lg animate-bounce" />
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                  Trenddagi Eng Sara Qo'shiqlar (Top Hits)
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowOnlyTrending(true)}
+                className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                Barcha trendlarni ko'rish →
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+              {topTrendingSongs.map((ts, idx) => (
+                <div
+                  key={ts.id}
+                  onClick={() => handlePlaySong(ts)}
+                  className="flex-shrink-0 w-36 sm:w-44 p-2.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md cursor-pointer group transition-all"
+                >
+                  <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-slate-200 dark:bg-slate-800">
+                    <img
+                      src={ts.cover_url}
+                      alt={ts.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/70 text-amber-300 font-extrabold text-[10px] flex items-center gap-1 shadow">
+                      <span>#{idx + 1}</span>
+                      <FaFire className="text-[9px] text-orange-400" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg">
+                        <FaPlay className="text-[10px] ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {ts.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {ts.artist}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Yuklanish holati */}
         {loading && (
@@ -239,13 +342,22 @@ const Musiqa = () => {
               Hech qanday musiqa topilmadi
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-              {showOnlyLiked
+              {showOnlyTrending
+                ? "Hozircha trenddagi filtr bo'yicha musiqa topilmadi."
+                : showOnlyLiked
                 ? t('empty_liked', "Siz hali hech qaysi qo'shiqqa like bosmadingiz.")
                 : searchQuery
                 ? `"${searchQuery}" ${t('empty_search', "so'rovi bo'yicha musiqa topilmadi.")}`
                 : "Tanlangan parametrlar bo'yicha musiqa mavjud emas."}
             </p>
-            {showOnlyLiked ? (
+            {showOnlyTrending ? (
+              <button
+                onClick={() => setShowOnlyTrending(false)}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                Barcha musiqalarni ko'rish
+              </button>
+            ) : showOnlyLiked ? (
               <button
                 onClick={() => setShowOnlyLiked(false)}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
@@ -263,7 +375,7 @@ const Musiqa = () => {
           </div>
         )}
 
-        {/* Musiqalar ro'yxati (Grid / Horizontal modern list) */}
+        {/* Musiqalar ro'yxati (Grid) */}
         {!loading && filteredSongs.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
             {filteredSongs.map((song) => {
@@ -278,7 +390,7 @@ const Musiqa = () => {
                   isCurrent={isCurrent}
                   isPlayingCurrent={isPlayingCurrent}
                   onPlay={handlePlaySong}
-                  onToggleLike={toggleLike}
+                  onToggleLike={handleToggleLike}
                   onOpenComment={(selected) => setActiveCommentSong(selected)}
                   onOpenLyrics={(selected) => setActiveLyricsSong(selected)}
                   onDeleteSong={deleteSong}
@@ -291,24 +403,38 @@ const Musiqa = () => {
 
       </main>
 
-      {/* Audio Player (Desktopda to'liq bar, Mobil telefonlarda ixcham mini-player & to'liq sheet) */}
+      {/* 3. SO'NGIDA "NEXT.JS" (Foydalanuvchi talabi: "va songida next.js bolsin") */}
+      <NextFooter />
+
+      {/* Audio Player */}
       <AudioPlayer
         player={player}
         songsList={filteredSongs.length > 0 ? filteredSongs : songs}
-        onToggleLike={toggleLike}
+        onToggleLike={handleToggleLike}
         onOpenComment={(selected) => setActiveCommentSong(selected)}
         onOpenLyrics={(selected) => setActiveLyricsSong(selected)}
         commentCount={player.currentSong ? getCommentCount(player.currentSong.id) : 0}
       />
 
-      {/* Mobil telefonlar uchun qulay pastki navigatsiya (Asosiy, Sevimlilar, Qo'shish, Qidiruv, Profil) */}
+      {/* Mobil telefonlar uchun qulay pastki navigatsiya */}
       <MobileBottomNav
         showOnlyLiked={showOnlyLiked}
         setShowOnlyLiked={setShowOnlyLiked}
         likedCount={likedCount}
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenGuide={() => setIsGuideModalOpen(true)}
+        onOpenProfile={() => setIsInstagramProfileOpen(true)}
         onFocusSearch={handleFocusSearch}
+      />
+
+      {/* Instagram Uslubidagi Profil Modali (Rasm 3 ga aynan mos, rasm 2 kabi sodda emas) */}
+      <InstagramProfileModal
+        isOpen={isInstagramProfileOpen}
+        onClose={() => setIsInstagramProfileOpen(false)}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
+        likedSongs={likedSongsList}
+        songs={songs}
+        onPlaySong={handlePlaySong}
       />
 
       {/* Musiqa qo'shish modali (Faqat admin qo'sha oladi) */}
@@ -319,22 +445,23 @@ const Musiqa = () => {
         onOpenLogin={() => setIsLoginModalOpen(true)}
       />
 
-      {/* Login Modali (Foydalanuvchi: Muhammad, Admin: Humoyun) */}
+      {/* Login Modali (Rasm 1 dagi kabi dizayn: Tizimga Kirish, Birinchi marta kirish ariza va email) */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
       />
 
-      {/* Foydalanish qismi va Foydalanuvchi profili modali */}
+      {/* Foydalanish qismi va Profil modali */}
       <UserGuideModal
         isOpen={isGuideModalOpen}
         onClose={() => setIsGuideModalOpen(false)}
         onOpenLogin={() => setIsLoginModalOpen(true)}
+        onOpenInstagramProfile={() => setIsInstagramProfileOpen(true)}
         likedCount={likedCount}
         totalSongs={songs.length}
       />
 
-      {/* Admin Boshqaruv paneli modali */}
+      {/* Admin Boshqaruv paneli modali (Monitoring, arizalar, login/parol berish, emailga yuborish) */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}

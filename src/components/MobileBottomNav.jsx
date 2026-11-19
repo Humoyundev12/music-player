@@ -16,6 +16,7 @@ const MobileBottomNav = ({
   likedCount = 0,
   onOpenAddModal,
   onOpenGuide,
+  onOpenProfile,
   onFocusSearch,
 }) => {
   const { isAdmin } = useAuth();
@@ -99,9 +100,9 @@ const MobileBottomNav = ({
           <span className="text-[10px] mt-0.5 tracking-tight">Qidiruv</span>
         </button>
 
-        {/* Profil / Qo'llanma */}
+        {/* Profil (Instagram-style) */}
         <button
-          onClick={onOpenGuide}
+          onClick={onOpenProfile || onOpenGuide}
           className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all duration-200"
         >
           <FaUserCircle className="text-xl" />

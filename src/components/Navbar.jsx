@@ -10,6 +10,8 @@ import {
   FaSignOutAlt,
   FaBookOpen,
   FaTimes,
+  FaFire,
+  FaInstagram,
 } from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslate, LANGUAGES } from '../hooks/useTranslate';
@@ -19,17 +21,20 @@ const Navbar = ({
   setSearchQuery,
   showOnlyLiked,
   setShowOnlyLiked,
+  showOnlyTrending,
+  setShowOnlyTrending,
   likedCount,
   onOpenAddModal,
   onOpenLogin,
   onOpenGuide,
+  onOpenProfile,
   onOpenAdminPanel,
   isDark,
   toggleTheme,
   totalSongs,
   searchInputRef,
 }) => {
-  const { currentUser, isAdmin, isLoggedIn, logout } = useAuth();
+  const { currentUser, isAdmin, isLoggedIn, logout, trackSearch } = useAuth();
   const { lang, setLang, t } = useTranslate();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -80,6 +85,11 @@ const Navbar = ({
                 placeholder={t('search_placeholder', "Qo'shiq, ijrochi yoki janr qidirish...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    trackSearch(searchQuery.trim());
+                  }
+                }}
                 className="w-full pl-10 pr-9 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 focus:border-amber-500 dark:focus:border-amber-500 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all shadow-inner"
               />
               {searchQuery && (
@@ -164,9 +174,29 @@ const Navbar = ({
               </button>
             )}
 
+            {/* Trenddagi qo'shiqlar filter tugmasi (Desktop) */}
+            <button
+              onClick={() => {
+                setShowOnlyTrending(!showOnlyTrending);
+                if (showOnlyLiked) setShowOnlyLiked(false);
+              }}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                showOnlyTrending
+                  ? 'bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 text-white shadow-md shadow-orange-500/30 ring-2 ring-orange-300'
+                  : 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60'
+              }`}
+              title="Trenddagi qo'shiqlar"
+            >
+              <FaFire className={showOnlyTrending ? 'text-amber-200 animate-bounce' : 'text-orange-500'} />
+              <span>Trenddagilar</span>
+            </button>
+
             {/* Yoqtirilganlar filter tugmasi (Desktop) */}
             <button
-              onClick={() => setShowOnlyLiked(!showOnlyLiked)}
+              onClick={() => {
+                setShowOnlyLiked(!showOnlyLiked);
+                if (showOnlyTrending) setShowOnlyTrending(false);
+              }}
               className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 showOnlyLiked
                   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25 ring-2 ring-rose-300'
@@ -230,10 +260,20 @@ const Navbar = ({
                       <div className="text-[11px] text-slate-400 font-mono">@{currentUser.username}</div>
                     </div>
                     <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        if (onOpenProfile) onOpenProfile();
+                        else if (onOpenGuide) onOpenGuide();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-semibold flex items-center gap-2"
+                    >
+                      <FaInstagram className="text-pink-500 text-sm" /> Instagram Profil
+                    </button>
+                    <button
                       onClick={onOpenGuide}
                       className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-2"
                     >
-                      <FaUserCircle className="text-amber-500" /> Shaxsiy profil & Qo'llanma
+                      <FaBookOpen className="text-amber-500" /> Sayt qo'llanmasi
                     </button>
                     {isAdmin && (
                       <button
@@ -284,6 +324,11 @@ const Navbar = ({
               placeholder={t('search_placeholder', "Qo'shiq, ijrochi yoki janr qidirish...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  trackSearch(searchQuery.trim());
+                }
+              }}
               className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 focus:border-amber-500 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none"
             />
             {searchQuery && (

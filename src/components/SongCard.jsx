@@ -8,6 +8,7 @@ import {
   FaHeadphones,
   FaLanguage,
   FaTrashAlt,
+  FaFire,
 } from 'react-icons/fa';
 import { resolveMediaUrl, DEFAULT_COVERS } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
@@ -104,6 +105,13 @@ const SongCard = ({
           {song.genre && (
             <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300">
               {song.genre}
+            </span>
+          )}
+
+          {(song.isTrending || Number(song.plays) >= 900) && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-orange-500 to-rose-600 text-white text-[9px] font-extrabold shadow-sm animate-pulse">
+              <FaFire className="text-[9px] text-amber-200" />
+              <span>Trend</span>
             </span>
           )}
 

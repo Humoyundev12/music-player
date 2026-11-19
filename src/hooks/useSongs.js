@@ -17,6 +17,7 @@ export const useSongs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [showOnlyLiked, setShowOnlyLiked] = useState(false);
+  const [showOnlyTrending, setShowOnlyTrending] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('All');
 
   // O'chirilgan qo'shiqlar ID ro'yxati (Admin o'chirganida)
@@ -322,7 +323,7 @@ export const useSongs = () => {
 
   // Filtrlangan qo'shiqlar ro'yxati
   const filteredSongs = useMemo(() => {
-    return songs.filter((song) => {
+    let list = songs.filter((song) => {
       // Qidiruv
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -353,9 +354,21 @@ export const useSongs = () => {
         }
       }
 
+      // Faqat trenddagi qo'shiqlar
+      if (showOnlyTrending) {
+        const isTrend = song.isTrending || Number(song.plays) >= 900 || Number(song.likes) >= 150;
+        if (!isTrend) return false;
+      }
+
       return true;
     });
-  }, [songs, searchQuery, selectedGenre, selectedLanguage, showOnlyLiked, likedIds]);
+
+    if (showOnlyTrending) {
+      list = [...list].sort((a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0));
+    }
+
+    return list;
+  }, [songs, searchQuery, selectedGenre, selectedLanguage, showOnlyLiked, showOnlyTrending, likedIds]);
 
   return {
     songs,
@@ -371,6 +384,8 @@ export const useSongs = () => {
     setSelectedLanguage,
     showOnlyLiked,
     setShowOnlyLiked,
+    showOnlyTrending,
+    setShowOnlyTrending,
     likedCount: likedIds.length,
     toggleLike,
     addSong,
