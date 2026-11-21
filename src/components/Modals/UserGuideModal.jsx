@@ -1,272 +1,164 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   FaTimes,
   FaBookOpen,
-  FaUserCircle,
-  FaCrown,
   FaLanguage,
-  FaLock,
-  FaCheckCircle,
   FaHeart,
-  FaHeadphones,
-  FaSignOutAlt,
-  FaSignInAlt,
+  FaDownload,
+  FaCommentDots,
+  FaPaperPlane,
+  FaTelegramPlane,
+  FaEnvelope,
+  FaShieldAlt,
+  FaCheckCircle,
 } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
-import { useTranslate } from '../../hooks/useTranslate';
 
 const UserGuideModal = ({
   isOpen,
   onClose,
-  onOpenLogin,
-  onOpenInstagramProfile,
-  likedCount = 0,
-  totalSongs = 0,
+  onOpenFeedback,
 }) => {
-  const { currentUser, logout, isAdmin, isLoggedIn, updateUserProfile } = useAuth();
-  const { t } = useTranslate();
-  const [activeTab, setActiveTab] = useState('guide'); // 'guide' | 'profile'
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none">
       <div
-        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[88vh]"
+        className="relative w-full max-w-xl bg-[#0f172a] rounded-3xl shadow-2xl border border-slate-800 flex flex-col max-h-[88vh] overflow-hidden text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Tepa qismi */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-900/60">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-amber-500/20 ring-2 ring-amber-500/30 shrink-0">
-              <img src="/logo.png" alt="HB Logo" className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <FaBookOpen className="text-lg" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {t('guide_title', "Saytdan foydalanish qismi va Profil")}
+              <h2 className="text-base sm:text-lg font-black text-white">
+                Foydalanish qo'llanmasi va Yordam
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                HB Music — Imkoniyatlar, qoidalar va shaxsiy hisobingiz
+              <p className="text-[11px] text-slate-400">
+                HB Music imkoniyatlari va qulayliklari
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <FaTimes />
           </button>
         </div>
 
-        {/* Tablar: Qo'llanma | Profil */}
-        <div className="flex border-b border-slate-100 dark:border-slate-800 px-6 gap-2 bg-slate-50/50 dark:bg-slate-900/50">
-          <button
-            onClick={() => setActiveTab('guide')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'guide'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <FaBookOpen />
-            <span>Foydalanish qo'llanmasi</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'profile'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <FaUserCircle />
-            <span>Foydalanuvchi Profili</span>
-            {isLoggedIn && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                isAdmin ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-              }`}>
-                {isAdmin ? 'Admin' : 'User'}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Kontent */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {activeTab === 'guide' ? (
-            <div className="space-y-4">
-              
-              {/* Qoida 1: Login va Parol */}
-              <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40">
-                <div className="flex items-center gap-2.5 mb-2 font-bold text-sm text-indigo-900 dark:text-indigo-200">
-                  <FaLock className="text-indigo-600 dark:text-indigo-400" />
-                  <h4>1. Tizimga kirish (Login)</h4>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-                  Tizimda foydalanuvchi va admin uchun shaxsiy hisoblar mavjud. Xavfsizlik maqsadida barcha parollar maxfiy saqlanadi:
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+          
+          {/* Guide items */}
+          <div className="space-y-3">
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 shrink-0 mt-0.5">
+                <FaLanguage className="text-base" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-white text-xs">Ruscha va Chet tili qo'shiqlari tarjimasi</h4>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  Har qanday chet tilidagi qo'shiqni tanlaganingizda, "Tarjimasi" tugmasini bosib, uning qatorma-qator o'zbek tilidagi ma'no tarjimasini o'qishingiz mumkin.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-slate-700 shadow-sm">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">
-                      👤 Oddiy Foydalanuvchi:
-                    </span>
-                    <div className="space-y-0.5 text-slate-600 dark:text-slate-400 text-[11px]">
-                      <div>Login: <b className="text-indigo-600 dark:text-indigo-400 font-mono">Muhammad</b></div>
-                      <div>Parol: <span className="text-slate-400 font-mono tracking-widest font-bold">••••••••</span></div>
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">Parol maxfiy himoyalangan</div>
-                    </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 shrink-0 mt-0.5">
+                <FaHeart className="text-base" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-white text-xs">Musiqani saqlash va yuklab olish</h4>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  O'zingizga yoqqan musiqalarni yurakcha orqali Sevimlilar to'plamiga saqlang yoki "Yuklab olish" tugmasi orqali telefon va kompyuteringizga MP3 formatda yuklab oling.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 shrink-0 mt-0.5">
+                <FaCommentDots className="text-base" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-white text-xs">Fikrlar va Qo'shiq taklif qilish</h4>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  Saytga yangi qo'shiq qo'shish yoki o'z fikringizni bildirish uchun "+" tugmasini bosing yoki sahifa pastidagi taklif bo'limiga yozing.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ADMIN BILAN BOG'LANISH (foydalanuvchi yordam qismini boskanda eng pastida admin bilan bog'lanish tursa yetadi) */}
+          <div className="mt-5 pt-4 border-t border-slate-800">
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FaShieldAlt className="text-amber-400 text-base" />
+                  <h3 className="font-black text-xs text-white uppercase tracking-wider">
+                    Admin bilan bog'lanish
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                  Aloqa
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-300">
+                Savollaringiz, takliflaringiz yoki murojaat bo'yicha to'g'ridan-to'g'ri administrator bilan bog'lanishingiz mumkin:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {/* Telegram */}
+                <a
+                  href="https://t.me/moxirvich_7"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center gap-2.5 transition-all group"
+                >
+                  <div className="p-2 rounded-lg bg-sky-500/15 text-sky-400 group-hover:scale-110 transition-transform">
+                    <FaTelegramPlane className="text-sm" />
                   </div>
-
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-purple-100 dark:border-slate-700 shadow-sm">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">
-                      👑 Boshqaruvchi Admin:
-                    </span>
-                    <div className="space-y-0.5 text-slate-600 dark:text-slate-400 text-[11px]">
-                      <div>Login: <b className="text-purple-600 dark:text-purple-400 font-mono">Humoyun</b></div>
-                      <div>Parol: <span className="text-slate-400 font-mono tracking-widest font-bold">••••••••</span></div>
-                      <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-1">Admin paroli maxfiy himoyalangan</div>
-                    </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Telegram orqali:</span>
+                    <span className="font-bold text-white group-hover:text-amber-400">@moxirvich_7</span>
                   </div>
-                </div>
+                </a>
+
+                {/* Email */}
+                <a
+                  href="mailto:humoyun@hbmusic.uz"
+                  className="p-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center gap-2.5 transition-all group"
+                >
+                  <div className="p-2 rounded-lg bg-amber-500/15 text-amber-400 group-hover:scale-110 transition-transform">
+                    <FaEnvelope className="text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Elektron pochta:</span>
+                    <span className="font-bold text-white group-hover:text-amber-400">humoyun@hbmusic.uz</span>
+                  </div>
+                </a>
               </div>
 
-              {/* Qoida 2: Ruscha va Chet tili musiqalar tarjimasi */}
-              <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40">
-                <div className="flex items-center gap-2.5 mb-2 font-bold text-sm text-emerald-900 dark:text-emerald-200">
-                  <FaLanguage className="text-emerald-600 dark:text-emerald-400 text-base" />
-                  <h4>2. Ruscha va chet tilidagi musiqalar tarjimasi</h4>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Foydalanuvchi har qanday ruscha yoki boshqa tildagi qo'shiqni tanlaganda, pastki audio playerda va <b>"Matn va Tarjima"</b> oynasida uning o'zbek tilidagi ma'no tarjimasi qatorma-qator chiqib turadi.
-                </p>
-                <div className="mt-2.5 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
-                  <span className="font-bold text-slate-800 dark:text-slate-100">Misol:</span> "Группа крови на рукаве..." <br />
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold italic">👉 O'zbekcha tarjimasi: "Qo'limdagi yengimda qon guruhi..."</span>
-                </div>
-              </div>
-
-              {/* Qoida 3: Faqat Admin qo'shiq qo'sha oladi */}
-              <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
-                <div className="flex items-center gap-2.5 mb-2 font-bold text-sm text-amber-900 dark:text-amber-200">
-                  <FaCrown className="text-amber-600 dark:text-amber-400" />
-                  <h4>3. Musiqa qo'shish (Faqat Admin uchun)</h4>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Qo'shiqlarni faqat <b>Humoyun (Admin)</b> qo'sha oladi va boshqara oladi. Oddiy foydalanuvchi (Muhammad) musiqa qo'shish tugmasini bosganida tizim adminga xos huquqni talab qiladi.
-                </p>
-              </div>
-
-              {/* Qoida 4: useTranslate orqali sayt tilini almashtirish */}
-              <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40">
-                <div className="flex items-center gap-2.5 mb-2 font-bold text-sm text-purple-900 dark:text-purple-200">
-                  <FaCheckCircle className="text-purple-600 dark:text-purple-400" />
-                  <h4>4. Sayt tilini boshqarish (useTranslate hooki)</h4>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Yuqori paneldagi bayroqchali til tugmasi orqali sayt interfeysini <b>O'zbekcha 🇺🇿</b>, <b>Русский 🇷🇺</b> va <b>English 🇬🇧</b> tillariga bir zumda o'tkazishingiz mumkin.
-                </p>
-              </div>
+              {/* Direct Feedback trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenFeedback) onOpenFeedback();
+                }}
+                className="w-full py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <FaPaperPlane className="text-[10px]" />
+                <span>Sayt orqali fikr yoki xabar qoldirish</span>
+              </button>
 
             </div>
-          ) : (
-            /* Profil qismi */
-            <div className="space-y-5">
-              {isLoggedIn ? (
-                <div className="space-y-4">
-                  {/* Instagram uslubidagi profil taklifi */}
-                  <div className="p-6 rounded-3xl bg-black border border-neutral-800 text-white space-y-4">
-                    <div className="flex items-center gap-4">
-                      {/* Instagram gradient halqali avatar */}
-                      <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 shrink-0">
-                        <img
-                          src={currentUser.avatar}
-                          alt={currentUser.name}
-                          className="w-full h-full rounded-full object-cover border-2 border-black"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-white truncate">
-                            {currentUser.displayName || currentUser.username}
-                          </h3>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isAdmin ? 'bg-purple-900/60 text-purple-300' : 'bg-emerald-900/60 text-emerald-300'
-                          }`}>
-                            {isAdmin ? '👑 Admin' : '👤 User'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-neutral-400 truncate mt-0.5">
-                          {currentUser.name} • {currentUser.bio || 'Musiqa shaydosi'}
-                        </p>
-                      </div>
-                    </div>
+          </div>
 
-                    {/* Instagram uslubidagi to'liq profilga kirish */}
-                    <button
-                      onClick={() => {
-                        onClose();
-                        if (onOpenInstagramProfile) onOpenInstagramProfile();
-                      }}
-                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-95 text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                      <span>📸 Instagram Uslubidagi To'liq Profilni Ochish</span>
-                    </button>
-                  </div>
-
-                  {/* Chiqish yoki boshqa profilga o'tish */}
-                  <div className="pt-2 flex items-center justify-between">
-                    <button
-                      onClick={() => {
-                        logout();
-                        onOpenLogin();
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all"
-                    >
-                      <FaUserCircle /> Boshqa profilga o'tish
-                    </button>
-
-                    <button
-                      onClick={logout}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md active:scale-95 transition-all"
-                    >
-                      <FaSignOutAlt /> Chiqish (Logout)
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FaUserCircle className="text-5xl text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-                  <h4 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    Hozircha tizimga kirmagansiz
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4">
-                    Musiqalardan to'liq foydalanish, like bosish va qo'shiqlar qo'shish uchun hisobingizga kiring.
-                  </p>
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onOpenLogin();
-                    }}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-indigo-500/25 active:scale-95 transition-all"
-                  >
-                    <FaSignInAlt /> Tizimga kirish
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Modal pastki qismi */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-sm"
-          >
-            {t('close', 'Tushunarli, yopish')}
-          </button>
         </div>
       </div>
     </div>

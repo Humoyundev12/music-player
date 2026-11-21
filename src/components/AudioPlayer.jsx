@@ -15,6 +15,7 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaExpandAlt,
+  FaDownload,
 } from 'react-icons/fa';
 import { resolveMediaUrl, DEFAULT_COVERS } from '../services/api';
 import { useTranslate } from '../hooks/useTranslate';
@@ -553,6 +554,18 @@ const AudioPlayer = ({
           {/* O'ng qism: Matn va Tarjima, Izohlar va Ovoz */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
+            {/* Musiqani saqlash / yuklab olish */}
+            <a
+              href={currentSong.audio_url}
+              download={`${currentSong.title} - ${currentSong.artist}.mp3`}
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              title="Musiqani saqlash / yuklab olish (MP3)"
+            >
+              <FaDownload className="text-sm" />
+            </a>
+
             {/* Matn va Tarjima tugmasi */}
             <button
               onClick={() => onOpenLyrics(currentSong)}

@@ -25,6 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTranslate } from '../../hooks/useTranslate';
 import { resolveMediaUrl, DEFAULT_COVERS } from '../../services/api';
 import { clearStoredActivities } from '../../services/activityService';
+import { getFeedbacks, replyToFeedback } from '../../services/feedbackService';
 
 const AdminPanelModal = ({
   isOpen,
@@ -44,10 +45,29 @@ const AdminPanelModal = ({
   } = useAuth();
   const { t } = useTranslate();
 
-  const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'monitoring' | 'songs' | 'emails'
+  const [activeTab, setActiveTab] = useState('feedbacks'); // 'feedbacks' | 'requests' | 'monitoring' | 'songs' | 'emails'
   const [searchTerm, setSearchTerm] = useState('');
   const [activityFilter, setActivityFilter] = useState('ALL'); // 'ALL' | 'AUTH' | 'SEARCH' | 'PROFILE' | 'MUSIC'
   const [deletedSuccess, setDeletedSuccess] = useState('');
+
+  // Foydalanuvchilar fikrlari va javoblar
+  const [feedbacksList, setFeedbacksList] = useState(() => getFeedbacks());
+  const [replyInputs, setReplyInputs] = useState({});
+
+  const reloadFeedbacks = () => {
+    setFeedbacksList(getFeedbacks());
+  };
+
+  const handleSendFeedbackReply = (feedbackId) => {
+    const replyText = replyInputs[feedbackId];
+    if (!replyText || !replyText.trim()) return;
+
+    replyToFeedback(feedbackId, replyText.trim());
+    setApprovalNotification("✓ Javobingiz foydalanuvchiga yuborildi!");
+    setReplyInputs((prev) => ({ ...prev, [feedbackId]: '' }));
+    reloadFeedbacks();
+    setTimeout(() => setApprovalNotification(''), 4000);
+  };
 
   // Login & Parol berish modalikasi
   const [selectedReqForApproval, setSelectedReqForApproval] = useState(null);
@@ -195,6 +215,24 @@ const AdminPanelModal = ({
             {/* Admin Boshqaruv Tablari */}
             <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 gap-2 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto no-scrollbar">
               
+              {/* Tab: Foydalanuvchilar fikrlari & takliflari (MUHIM) */}
+              <button
+                onClick={() => setActiveTab('feedbacks')}
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all shrink-0 ${
+                  activeTab === 'feedbacks'
+                    ? 'border-amber-500 text-amber-500 dark:text-amber-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <span>💬 Fikrlar & Javoblar</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                  {feedbacksList.length}
+                </span>
+                {feedbacksList.some((f) => f.status === 'pending') && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                )}
+              </button>
+
               {/* Tab 1: Foydalanuvchi arizalari (Kirish so'rovlari) */}
               <button
                 onClick={() => setActiveTab('requests')}
@@ -255,6 +293,116 @@ const AdminPanelModal = ({
                 <span>Musiqalar ({songs.length})</span>
               </button>
             </div>
+
+            {/* TAB: FOYDALANUVCHILAR FIKRLARI VA ADMIN JAVOBI */}
+            {activeTab === 'feedbacks' && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Foydalanuvchilar Fikrlari va Qo'shiq Takliflari ({feedbacksList.length} ta)
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Foydalanuvchilar sayt orqali yuborgan fikr va takliflar. Shu yerdan to'g'ridan-to'g'ri javob yozing.
+                    </p>
+                  </div>
+                  <button
+                    onClick={reloadFeedbacks}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all"
+                  >
+                    Yangilash
+                  </button>
+                </div>
+
+                {feedbacksList.length === 0 ? (
+                  <div className="text-center py-12 text-xs text-slate-500">
+                    Hozircha foydalanuvchilardan fikrlar kelmadi.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {feedbacksList.map((fb) => (
+                      <div
+                        key={fb.id}
+                        className={`p-4 rounded-2xl border transition-all ${
+                          fb.status === 'replied'
+                            ? 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
+                            : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/60 shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                              👤 {fb.userName}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              (@{fb.userId})
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                fb.status === 'replied'
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
+                              }`}
+                            >
+                              {fb.status === 'replied' ? '✓ Javob berilgan' : '⏳ Javob kutilmoqda'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(fb.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Fikr matni */}
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 mb-3">
+                          <p className="font-bold text-amber-600 dark:text-amber-400 text-xs mb-1">
+                            {fb.subject}
+                          </p>
+                          <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                            {fb.message}
+                          </p>
+                        </div>
+
+                        {/* Agar javob berilgan bo'lsa */}
+                        {fb.adminReply && (
+                          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs space-y-1 mb-2">
+                            <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between text-[11px]">
+                              <span>👑 Sizning (Admin) javobingiz:</span>
+                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
+                                {fb.repliedAt ? new Date(fb.repliedAt).toLocaleDateString() : ''}
+                              </span>
+                            </div>
+                            <p className="text-slate-700 dark:text-slate-200">{fb.adminReply}</p>
+                          </div>
+                        )}
+
+                        {/* Javob yozish maydoni */}
+                        <div className="pt-1">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder={fb.adminReply ? "Javobni yangilash..." : "Foydalanuvchiga javob yozing..."}
+                              value={replyInputs[fb.id] || ''}
+                              onChange={(e) =>
+                                setReplyInputs((prev) => ({ ...prev, [fb.id]: e.target.value }))
+                              }
+                              className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSendFeedbackReply(fb.id)}
+                              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all"
+                            >
+                              Javob qaytarish
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* TAB 1: KIRISH SO'ROVLARI VA LOGIN/PAROL BERISH */}
             {activeTab === 'requests' && (

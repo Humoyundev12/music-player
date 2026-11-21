@@ -3,9 +3,9 @@ import { fetchSongsApi, fetchGenresApi, toggleLikeApi, addSongApi } from '../ser
 import { INITIAL_SONGS_COLLECTION } from '../data/songsData';
 import { saveMediaToDB, getMediaFromDB, deleteMediaFromDB } from '../services/audioStorage';
 
-const LIKED_STORAGE_KEY = 'music_app_liked_ids_v2';
-const LOCAL_SONGS_KEY = 'music_app_custom_songs_v2';
-const DELETED_SONGS_KEY = 'music_app_deleted_ids_v2';
+const LIKED_STORAGE_KEY = 'music_app_liked_ids_v3';
+const LOCAL_SONGS_KEY = 'music_app_custom_songs_v3';
+const DELETED_SONGS_KEY = 'music_app_deleted_ids_v3';
 
 export const useSongs = () => {
   const [backendSongs, setBackendSongs] = useState([]);

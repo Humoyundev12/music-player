@@ -84,50 +84,9 @@ const AddSongModal = ({ isOpen, onClose, onAddSong, onOpenLogin }) => {
 
   if (!isOpen) return null;
 
-  // Agar admin bo'lmasa, ogohlantirish ko'rsatiladi
+  // Agar admin bo'lmasa, bu modal ochilmaydi
   if (!isAdmin) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-        <div
-          className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 text-center space-y-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
-            <FaCrown className="text-3xl" />
-          </div>
-
-          <h3 className="text-lg font-black text-slate-900 dark:text-white">
-            {t('admin_only_add', "Faqat Admin qo'shiq qo'sha oladi!")}
-          </h3>
-
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Qo'shiqlarni faqat <b>Humoyun (Admin)</b> qo'shishi mumkin. Hozirda siz <b>{currentUser?.name || "Mehmon"}</b> hisobidasiz. Yangi musiqa kiritish uchun Admin sifatida tizimga kiring.
-          </p>
-
-          <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-900/60 text-xs text-purple-700 dark:text-purple-300 font-medium">
-            Admin hisobi: <b>Humoyun</b> (Parol maxfiy)
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"
-            >
-              Yopish
-            </button>
-            <button
-              onClick={() => {
-                onClose();
-                if (onOpenLogin) onOpenLogin();
-              }}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 shadow-md"
-            >
-              Admin sifatida kirish
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Audio fayl tanlanganda

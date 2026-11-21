@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   const [activities, setActivities] = useState(() => getStoredActivities());
   const [emails, setEmails] = useState(() => getStoredEmails());
 
-  // Hozirgi kirgan foydalanuvchi
+  // Hozirgi kirgan foydalanuvchi (birinchi marta kirganda login sahifasi chiqishi kerak)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_AUTH_KEY);
@@ -87,8 +87,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("Auth ma'lumotlarini o'qishda xatolik:", e);
     }
-    // Dastlabki qulaylik uchun default user sifatida kirgan holatda
-    return VALID_CREDENTIALS[1]; // Muhammad
+    return null; // Foydalanuvchi birinchi bo'lib login/parol kiritishi kerak!
   });
 
   // Hodisalarni tinglash (jonli yangilanish uchun)
@@ -153,6 +152,48 @@ export const AuthProvider = ({ children }) => {
         success: false,
         message: "Login yoki parol noto'g'ri! Agar birinchi marta kirayotgan bo'lsangiz, so'rov qoldiring.",
       };
+    },
+    [allAccounts]
+  );
+
+  // Yangi hisob ro'yxatdan o'tkazish
+  const registerUser = useCallback(
+    (userData) => {
+      const trimmedUser = (userData.username || '').trim();
+      const trimmedPass = (userData.password || '').trim();
+      const name = (userData.name || trimmedUser).trim();
+
+      if (!trimmedUser || !trimmedPass) {
+        return { success: false, message: "Iltimos, login va parolni to'liq kiriting!" };
+      }
+
+      const existing = allAccounts.find(
+        (a) => a.username.toLowerCase() === trimmedUser.toLowerCase()
+      );
+      if (existing) {
+        return { success: false, message: "Bu login band! Iltimos, boshqa login tanlang." };
+      }
+
+      const newUser = {
+        username: trimmedUser,
+        password: trimmedPass,
+        role: 'user',
+        name: name,
+        displayName: trimmedUser,
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+        title: 'Foydalanuvchi',
+        bio: "Musiqa ixlosmandi • HB Music a'zosi",
+        followers: 0,
+        following: 0,
+        postsCount: 0,
+      };
+
+      saveCustomUser(newUser);
+      setCustomUsers(getCustomUsers());
+      const userPayload = { ...newUser, loginTime: new Date().toISOString() };
+      setCurrentUser(userPayload);
+      logActivity('REGISTER', userPayload, `Yangi ro'yxatdan o'tdi: ${trimmedUser}`);
+      return { success: true, user: userPayload };
     },
     [allAccounts]
   );
@@ -308,6 +349,7 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         login,
         logout,
+        registerUser,
         isAdmin,
         isUser,
         isLoggedIn,
