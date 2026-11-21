@@ -13,6 +13,7 @@ import {
 const AuthContext = createContext(null);
 
 const STORAGE_AUTH_KEY = 'music_app_auth_user_v2';
+const SESSION_AUTH_KEY = 'music_app_auth_session_v4';
 
 // Standart belgilangan akkauntlar
 export const VALID_CREDENTIALS = [
@@ -77,17 +78,19 @@ export const AuthProvider = ({ children }) => {
   const [activities, setActivities] = useState(() => getStoredActivities());
   const [emails, setEmails] = useState(() => getStoredEmails());
 
-  // Hozirgi kirgan foydalanuvchi (birinchi marta kirganda login sahifasi chiqishi kerak)
+  // Hozirgi kirgan foydalanuvchi: saytga kirganda 1-rasm emas, doim 2-rasm (LoginScreen) chiqishi shart
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_AUTH_KEY);
-      if (saved) {
-        return JSON.parse(saved);
+      localStorage.removeItem(STORAGE_AUTH_KEY);
+      localStorage.removeItem('music_app_auth_user');
+      const savedSession = sessionStorage.getItem(SESSION_AUTH_KEY);
+      if (savedSession) {
+        return JSON.parse(savedSession);
       }
     } catch (e) {
-      console.warn("Auth ma'lumotlarini o'qishda xatolik:", e);
+      console.warn("Auth o'qishda xatolik:", e);
     }
-    return null; // Foydalanuvchi birinchi bo'lib login/parol kiritishi kerak!
+    return null;
   });
 
   // Hodisalarni tinglash (jonli yangilanish uchun)
@@ -110,13 +113,13 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // LocalStorage ga sinxronizatsiya
+  // SessionStorage ga sinxronizatsiya
   useEffect(() => {
     try {
       if (currentUser) {
-        localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(currentUser));
+        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(currentUser));
       } else {
-        localStorage.removeItem(STORAGE_AUTH_KEY);
+        sessionStorage.removeItem(SESSION_AUTH_KEY);
       }
     } catch (e) {
       console.warn("Auth saqlashda xatolik:", e);

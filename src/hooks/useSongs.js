@@ -1,16 +1,58 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchSongsApi, fetchGenresApi, toggleLikeApi, addSongApi } from '../services/api';
+import { DEFAULT_COVERS } from '../services/api';
 import { INITIAL_SONGS_COLLECTION } from '../data/songsData';
-import { saveMediaToDB, getMediaFromDB, deleteMediaFromDB } from '../services/audioStorage';
 
-const LIKED_STORAGE_KEY = 'music_app_liked_ids_v3';
-const LOCAL_SONGS_KEY = 'music_app_custom_songs_v3';
-const DELETED_SONGS_KEY = 'music_app_deleted_ids_v3';
+const SONGS_LIBRARY_KEY = 'hb_music_songs_v5';
+const LIKED_STORAGE_KEY = 'hb_music_liked_ids_v5';
 
 export const useSongs = () => {
-  const [backendSongs, setBackendSongs] = useState([]);
-  const [genres, setGenres] = useState(['All', 'Pop', 'Rock', 'Electronic', 'Hip-Hop', 'Lo-Fi', 'Ethno', 'Chill', 'Folk']);
-  const [loading, setLoading] = useState(true);
+  // Eski qoldiqlarni tozalash (foydalanuvchi talabi: hamma qo'shiqni o'chirib yubor)
+  useEffect(() => {
+    try {
+      localStorage.removeItem('music_app_custom_songs_v2');
+      localStorage.removeItem('music_app_custom_songs_v3');
+      localStorage.removeItem('music_app_deleted_ids_v2');
+      localStorage.removeItem('music_app_deleted_ids_v3');
+    } catch (e) {}
+  }, []);
+
+  const [genres, setGenres] = useState([
+    'All',
+    'Pop',
+    'Rock',
+    'Electronic',
+    'Hip-Hop',
+    'Lo-Fi',
+    'Ethno',
+    'Chill',
+    'Folk',
+    'Klassik',
+  ]);
+
+  // Qo'shiqlar ro'yxati (Barcha dastlabki qo'shiqlar o'chirildi, Admin o'zi yuklaydi)
+  const [songsList, setSongsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SONGS_LIBRARY_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn("Musiqalarni o'qishda xatolik:", e);
+    }
+    return INITIAL_SONGS_COLLECTION; // [] (bo'sh)
+  });
+
+  const [likedIds, setLikedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(LIKED_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Qidiruv va filtrlar
@@ -20,358 +62,162 @@ export const useSongs = () => {
   const [showOnlyTrending, setShowOnlyTrending] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('All');
 
-  // O'chirilgan qo'shiqlar ID ro'yxati (Admin o'chirganida)
-  const [deletedIds, setDeletedIds] = useState(() => {
+  // Har bir o'zgarishda darhol LocalStorage ga saqlash (mobil telefondan kirganda ham saqlanib qoladi)
+  const persistSongs = useCallback((updatedList) => {
+    setSongsList(updatedList);
     try {
-      const saved = localStorage.getItem(DELETED_SONGS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // LocalStorage dan saqlangan likelarni olish
-  const [likedIds, setLikedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LIKED_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : ['ru-1', 'ru-2', 'en-1', 'uz-1'];
-    } catch {
-      return ['ru-1', 'ru-2'];
-    }
-  });
-
-  // LocalStorage dan Admin qo'shgan maxsus qo'shiqlarni olish
-  const [customSongs, setCustomSongs] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_SONGS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Local fayllar (IndexedDB) dan audio va cover bloblarini qayta tiklash
-  useEffect(() => {
-    let active = true;
-    const restoreBlobs = async () => {
-      const updated = await Promise.all(
-        customSongs.map(async (song) => {
-          let audioUrl = song.audio_url;
-          let coverUrl = song.cover_url;
-
-          if (song.hasLocalAudio) {
-            const audioBlob = await getMediaFromDB(`audio_${song.id}`);
-            if (audioBlob) {
-              audioUrl = URL.createObjectURL(audioBlob);
-            }
-          }
-
-          if (song.hasLocalCover) {
-            const coverBlob = await getMediaFromDB(`cover_${song.id}`);
-            if (coverBlob) {
-              coverUrl = URL.createObjectURL(coverBlob);
-            }
-          }
-
-          return { ...song, audio_url: audioUrl, cover_url: coverUrl };
-        })
-      );
-
-      if (active) {
-        // Faqat o'zgargan bo'lsa yangilaymiz
-        setCustomSongs((prev) => {
-          let hasChange = false;
-          const merged = prev.map((s) => {
-            const match = updated.find((u) => u.id === s.id);
-            if (match && (match.audio_url !== s.audio_url || match.cover_url !== s.cover_url)) {
-              hasChange = true;
-              return match;
-            }
-            return s;
-          });
-          return hasChange ? merged : prev;
-        });
-      }
-    };
-
-    if (customSongs.some((s) => s.hasLocalAudio || s.hasLocalCover)) {
-      restoreBlobs();
-    }
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Backenddan qo'shiqlarni yuklash
-  const loadSongs = useCallback(async (isReload = false) => {
-    if (isReload) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const [fetchedSongs, fetchedGenres] = await Promise.all([
-        fetchSongsApi().catch((err) => {
-          console.warn("Backenddan qo'shiqlar olinmadi:", err);
-          return [];
-        }),
-        fetchGenresApi().catch(() => []),
-      ]);
-
-      setBackendSongs(fetchedSongs);
-
-      const allGenres = new Set(['All', 'Pop', 'Rock', 'Electronic', 'Hip-Hop', 'Lo-Fi', 'Ethno', 'Chill', 'Folk', ...fetchedGenres]);
-      fetchedSongs.forEach((s) => {
-        if (s.genre) allGenres.add(s.genre);
-      });
-      INITIAL_SONGS_COLLECTION.forEach((s) => {
-        if (s.genre) allGenres.add(s.genre);
-      });
-      setGenres(Array.from(allGenres));
-    } catch (err) {
-      console.error("Qo'shiqlarni yuklashda xatolik:", err);
-      setError("Qo'shiqlarni yuklab bo'lmadi. Internet aloqasini tekshiring.");
-    } finally {
-      setLoading(false);
+      localStorage.setItem(SONGS_LIBRARY_KEY, JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('hb_songs_library_updated'));
+    } catch (e) {
+      console.error("Musiqalarni saqlashda xato:", e);
     }
   }, []);
 
-  useEffect(() => {
-    loadSongs(false);
-  }, [loadSongs]);
-
-  // LikedIds saqlash
+  // Liked IDs saqlash
   useEffect(() => {
     try {
       localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(likedIds));
-    } catch (e) {
-      console.warn("Likelarni saqlashda xato:", e);
-    }
+    } catch (e) {}
   }, [likedIds]);
 
-  // CustomSongs saqlash (Blob URL lardan tashqari serializable ma'lumotlar saqlanadi)
+  // Jonli hodisalarni tinglash
   useEffect(() => {
-    try {
-      const serializableSongs = customSongs.map((s) => {
-        // Blob URL lar sahifa yangilanganda yangilanadi
-        return {
-          ...s,
-          audio_url: s.hasLocalAudio ? '' : s.audio_url,
-          cover_url: s.hasLocalCover ? '' : s.cover_url,
-        };
-      });
-      localStorage.setItem(LOCAL_SONGS_KEY, JSON.stringify(serializableSongs));
-    } catch (e) {
-      console.warn("Maxsus qo'shiqlarni saqlashda xato:", e);
-    }
-  }, [customSongs]);
-
-  // DeletedIds saqlash
-  useEffect(() => {
-    try {
-      localStorage.setItem(DELETED_SONGS_KEY, JSON.stringify(deletedIds));
-    } catch (e) {
-      console.warn("O'chirilganlarni saqlashda xato:", e);
-    }
-  }, [deletedIds]);
-
-  // Birlashtirish
-  const songs = useMemo(() => {
-    const combined = [...customSongs, ...INITIAL_SONGS_COLLECTION, ...backendSongs];
-    const uniqueMap = new Map();
-
-    combined.forEach((s) => {
-      if (deletedIds.includes(String(s.id))) {
-        return;
-      }
-
-      if (!uniqueMap.has(String(s.id))) {
-        const isLiked = likedIds.includes(s.id) || likedIds.includes(String(s.id)) || !!s.liked;
-        const baseLikes = Number(s.likes) || 0;
-        const extraLike = (likedIds.includes(s.id) || likedIds.includes(String(s.id))) && !s.liked ? 1 : 0;
-
-        uniqueMap.set(String(s.id), {
-          ...s,
-          liked: isLiked,
-          likes: baseLikes + extraLike,
-        });
-      }
-    });
-
-    return Array.from(uniqueMap.values());
-  }, [backendSongs, customSongs, likedIds, deletedIds]);
-
-  // Like bosish
-  const toggleLike = useCallback(async (songId) => {
-    setLikedIds((prev) => {
-      const exists = prev.includes(songId) || prev.includes(String(songId));
-      if (exists) {
-        return prev.filter((id) => id !== songId && id !== String(songId));
-      } else {
-        return [...prev, songId];
-      }
-    });
-
-    if (typeof songId === 'number' || (!isNaN(songId) && !String(songId).includes('-') && !String(songId).includes('local_'))) {
+    const handleSync = () => {
       try {
-        await toggleLikeApi(songId);
-      } catch (err) {
-        console.info("Like lokal saqlandi:", err?.message);
-      }
-    }
+        const saved = localStorage.getItem(SONGS_LIBRARY_KEY);
+        if (saved) {
+          setSongsList(JSON.parse(saved));
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('hb_songs_library_updated', handleSync);
+    return () => window.removeEventListener('hb_songs_library_updated', handleSync);
   }, []);
 
-  // Yangi qo'shiq qo'shish (Faqat admin uchun - URL, Fayl yoki Ovoz yozuvi orqali)
-  const addSong = useCallback(async (newSongData) => {
-    const songId = `local_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  // Janrlar ro'yxatini yangilash
+  useEffect(() => {
+    const all = new Set(['All', 'Pop', 'Rock', 'Electronic', 'Hip-Hop', 'Lo-Fi', 'Ethno', 'Chill', 'Folk', 'Klassik']);
+    songsList.forEach((s) => {
+      if (s.genre) all.add(s.genre);
+    });
+    setGenres(Array.from(all));
+  }, [songsList]);
 
-    let finalAudioUrl = newSongData.audio_url || '';
-    let finalCoverUrl = newSongData.cover_url || '';
-    let hasLocalAudio = false;
-    let hasLocalCover = false;
+  // Like bosish
+  const toggleLike = useCallback(
+    (songId) => {
+      const idStr = String(songId);
+      const isCurrentlyLiked = likedIds.includes(idStr);
 
-    // 1. Agar foydalanuvchi Audio fayl yuklagan bo'lsa
-    if (newSongData.audioFile) {
-      try {
-        await saveMediaToDB(`audio_${songId}`, newSongData.audioFile);
-        finalAudioUrl = URL.createObjectURL(newSongData.audioFile);
-        hasLocalAudio = true;
-      } catch (e) {
-        console.warn("Audio faylni saqlashda xato:", e);
-      }
-    }
+      const nextLikedIds = isCurrentlyLiked
+        ? likedIds.filter((id) => id !== idStr)
+        : [...likedIds, idStr];
+      setLikedIds(nextLikedIds);
 
-    // 2. Agar foydalanuvchi Cover rasm fayl yuklagan bo'lsa
-    if (newSongData.coverFile) {
-      try {
-        await saveMediaToDB(`cover_${songId}`, newSongData.coverFile);
-        finalCoverUrl = URL.createObjectURL(newSongData.coverFile);
-        hasLocalCover = true;
-      } catch (e) {
-        console.warn("Cover faylni saqlashda xato:", e);
-      }
-    }
-
-    // Backendga yuborishga urinish
-    let createdSong = null;
-    try {
-      const res = await addSongApi({
-        ...newSongData,
-        audio_url: finalAudioUrl,
-        cover_url: finalCoverUrl,
+      const updated = songsList.map((s) => {
+        if (String(s.id) === idStr) {
+          const currentLikes = Number(s.likes) || 0;
+          return {
+            ...s,
+            liked: !isCurrentlyLiked,
+            likes: isCurrentlyLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1,
+          };
+        }
+        return s;
       });
-      if (res && res.id) {
-        createdSong = {
-          ...res,
-          language: newSongData.language || 'uz',
-          hasTranslation: !!newSongData.hasTranslation,
-          lyrics: newSongData.lyrics || [],
-          summary: newSongData.summary || '',
-          hasLocalAudio,
-          hasLocalCover,
-          audio_url: finalAudioUrl,
-          cover_url: finalCoverUrl,
-        };
-      }
-    } catch (backendErr) {
-      console.warn("Backendga qo'shiq yuklanmadi (lokal saqlanadi):", backendErr?.message);
-    }
 
-    if (!createdSong) {
-      createdSong = {
+      persistSongs(updated);
+    },
+    [likedIds, songsList, persistSongs]
+  );
+
+  // Yangi musiqa qo'shish (Faqat Admin kiritadi, mobil yoki kompyuterdan to'liq saqlanadi)
+  const addSong = useCallback(
+    async (newSongData) => {
+      const songId = `song_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+      const newSong = {
         id: songId,
-        title: newSongData.title,
-        artist: newSongData.artist,
+        title: newSongData.title?.trim() || "Nomsiz tarona",
+        artist: newSongData.artist?.trim() || "Noma'lum ijrochi",
         genre: newSongData.genre || 'Pop',
         language: newSongData.language || 'uz',
         hasTranslation: !!newSongData.hasTranslation,
         lyrics: newSongData.lyrics || [],
-        summary: newSongData.summary || '',
-        audio_url: finalAudioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        cover_url: finalCoverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80',
-        hasLocalAudio,
-        hasLocalCover,
+        summary: newSongData.summary?.trim() || '',
+        audio_url: newSongData.audio_url || '',
+        cover_url: newSongData.cover_url || DEFAULT_COVERS[0],
         plays: 0,
         likes: 0,
         liked: false,
         created_at: new Date().toISOString(),
-        isLocal: true,
       };
-    }
 
-    // Janrlar ro'yxatini yangilash
-    if (newSongData.genre) {
-      setGenres((prev) => (prev.includes(newSongData.genre) ? prev : [...prev, newSongData.genre]));
-    }
+      const updated = [newSong, ...songsList];
+      persistSongs(updated);
+      return newSong;
+    },
+    [songsList, persistSongs]
+  );
 
-    // Saqlash
-    setCustomSongs((prev) => [createdSong, ...prev]);
+  // Qo'shiqni o'chirish (Admin o'chirsa, qayta tiklanmaydi, doimiy o'chadi)
+  const deleteSong = useCallback(
+    (songId) => {
+      const idStr = String(songId);
+      const updated = songsList.filter((s) => String(s.id) !== idStr);
+      persistSongs(updated);
+    },
+    [songsList, persistSongs]
+  );
 
-    return createdSong;
-  }, []);
-
-  // Admin qo'shiqni o'chirishi
-  const deleteSong = useCallback(async (songId) => {
-    const idStr = String(songId);
-    setDeletedIds((prev) => [...prev, idStr]);
-    setCustomSongs((prev) => prev.filter((s) => String(s.id) !== idStr));
-
-    // IndexedDB dan ham o'chirish
-    await deleteMediaFromDB(`audio_${idStr}`);
-    await deleteMediaFromDB(`cover_${idStr}`);
-  }, []);
-
-  // Filtrlangan qo'shiqlar ro'yxati
+  // Filtrlangan qo'shiqlar
   const filteredSongs = useMemo(() => {
-    let list = songs.filter((song) => {
-      // Qidiruv
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchTitle = song.title?.toLowerCase().includes(query);
-        const matchArtist = song.artist?.toLowerCase().includes(query);
-        const matchGenre = song.genre?.toLowerCase().includes(query);
-        if (!matchTitle && !matchArtist && !matchGenre) return false;
+    let list = songsList.map((s) => ({
+      ...s,
+      liked: likedIds.includes(String(s.id)) || !!s.liked,
+    }));
+
+    // Qidiruv
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (s) =>
+          s.title?.toLowerCase().includes(q) ||
+          s.artist?.toLowerCase().includes(q) ||
+          s.genre?.toLowerCase().includes(q)
+      );
+    }
+
+    // Janr filtri
+    if (selectedGenre !== 'All') {
+      list = list.filter((s) => s.genre?.toLowerCase() === selectedGenre.toLowerCase());
+    }
+
+    // Til filtri
+    if (selectedLanguage !== 'All') {
+      if (selectedLanguage === 'hasTranslation') {
+        list = list.filter((s) => s.hasTranslation);
+      } else {
+        list = list.filter((s) => s.language === selectedLanguage);
       }
+    }
 
-      // Janr
-      if (selectedGenre !== 'All') {
-        if (song.genre?.toLowerCase() !== selectedGenre.toLowerCase()) return false;
-      }
+    // Sevimlilar filtri
+    if (showOnlyLiked) {
+      list = list.filter((s) => s.liked);
+    }
 
-      // Til filtri
-      if (selectedLanguage !== 'All') {
-        if (selectedLanguage === 'hasTranslation') {
-          if (!song.hasTranslation) return false;
-        } else if (song.language !== selectedLanguage) {
-          return false;
-        }
-      }
-
-      // Faqat yoqtirilganlar
-      if (showOnlyLiked) {
-        if (!song.liked && !likedIds.includes(song.id) && !likedIds.includes(String(song.id))) {
-          return false;
-        }
-      }
-
-      // Faqat trenddagi qo'shiqlar
-      if (showOnlyTrending) {
-        const isTrend = song.isTrending || Number(song.plays) >= 900 || Number(song.likes) >= 150;
-        if (!isTrend) return false;
-      }
-
-      return true;
-    });
-
+    // Trenddagilar filtri
     if (showOnlyTrending) {
-      list = [...list].sort((a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0));
+      list = list.filter((s) => s.isTrending || Number(s.plays) >= 900 || Number(s.likes) >= 10);
+      list.sort((a, b) => (Number(b.plays) || 0) - (Number(a.plays) || 0));
     }
 
     return list;
-  }, [songs, searchQuery, selectedGenre, selectedLanguage, showOnlyLiked, showOnlyTrending, likedIds]);
+  }, [songsList, likedIds, searchQuery, selectedGenre, selectedLanguage, showOnlyLiked, showOnlyTrending]);
 
   return {
-    songs,
+    songs: songsList,
     filteredSongs,
     genres,
     loading,
@@ -390,7 +236,7 @@ export const useSongs = () => {
     toggleLike,
     addSong,
     deleteSong,
-    reloadSongs: () => loadSongs(true),
+    reloadSongs: () => {},
   };
 };
 

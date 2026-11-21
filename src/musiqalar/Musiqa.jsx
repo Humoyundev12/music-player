@@ -336,10 +336,12 @@ const Musiqa = () => {
               <FaMusic className="text-2xl" />
             </div>
             <h3 className="text-base font-bold text-white mb-1">
-              Hech qanday musiqa topilmadi
+              {songs.length === 0 ? "Kutubxonada hozircha musiqa yo'q" : "Hech qanday musiqa topilmadi"}
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
-              {showOnlyTrending
+              {songs.length === 0
+                ? (isAdmin ? "Barcha eski qo'shiqlar olib tashlandi. Yangi musiqalar qo'shish uchun pastdagi tugmani bosing:" : "Administrator tomonidan yangi musiqalar kiritilishi kutilmoqda. Qaysi musiqani xohlashingizni taklif qilib qoldirishingiz mumkin.")
+                : showOnlyTrending
                 ? "Hozircha trenddagi filtr bo'yicha musiqa topilmadi."
                 : showOnlyLiked
                 ? "Siz hali hech qaysi qo'shiqni sevimli qilmadingiz."
@@ -353,6 +355,13 @@ const Musiqa = () => {
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
               >
                 Barcha musiqalarni ko'rish
+              </button>
+            ) : isAdmin ? (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                + Yangi musiqa kiritish
               </button>
             ) : (
               <button

@@ -201,6 +201,38 @@ const AddSongModal = ({ isOpen, onClose, onAddSong, onOpenLogin }) => {
     }
 
     try {
+      let finalAudio = audioUrl.trim();
+      let finalCover = coverUrl.trim();
+
+      // Agar kompyuter yoki telefondan audio fayl yuklangan bo'lsa
+      if ((audioSourceType === 'file' || audioSourceType === 'record') && audioFile) {
+        try {
+          finalAudio = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Audio faylni o'qishda xatolik"));
+            reader.readAsDataURL(audioFile);
+          });
+        } catch (readErr) {
+          console.warn("Audio read as DataURL fallback:", readErr);
+          finalAudio = audioFilePreview || URL.createObjectURL(audioFile);
+        }
+      }
+
+      // Agar cover rasm fayl yuklangan bo'lsa
+      if (coverSourceType === 'file' && coverFile) {
+        try {
+          finalCover = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(coverFile);
+          });
+        } catch {
+          finalCover = coverFilePreview || '';
+        }
+      }
+
       await onAddSong({
         title: title.trim(),
         artist: artist.trim(),
@@ -209,12 +241,10 @@ const AddSongModal = ({ isOpen, onClose, onAddSong, onOpenLogin }) => {
         hasTranslation: language !== 'uz' && pairedLyrics.length > 0,
         lyrics: pairedLyrics,
         summary: summary.trim(),
-        // Audio manbasi
-        audioFile: (audioSourceType === 'file' || audioSourceType === 'record') ? audioFile : null,
-        audio_url: audioSourceType === 'url' ? audioUrl.trim() : '',
-        // Cover manbasi
-        coverFile: coverSourceType === 'file' ? coverFile : null,
-        cover_url: coverSourceType === 'url' ? coverUrl.trim() : (coverSourceType === 'gallery' ? coverUrl : ''),
+        audio_url: finalAudio,
+        cover_url: finalCover || DEFAULT_COVERS[0],
+        audioFile: audioFile,
+        coverFile: coverFile,
       });
 
       setSuccessMsg(true);

@@ -4,10 +4,7 @@ import {
   FaUser,
   FaEye,
   FaEyeSlash,
-  FaShieldAlt,
   FaArrowRight,
-  FaUserCheck,
-  FaMusic,
   FaCheckCircle,
   FaExclamationCircle,
 } from 'react-icons/fa';
@@ -24,6 +21,7 @@ const LoginScreen = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [logoImgError, setLogoImgError] = useState(false);
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -79,23 +77,6 @@ const LoginScreen = () => {
     }, 400);
   };
 
-  const handleQuickLogin = (quickUser, quickPass) => {
-    setUsername(quickUser);
-    setPassword(quickPass);
-    setErrorMsg('');
-    setMode('login');
-    setLoading(true);
-    setTimeout(() => {
-      const res = login(quickUser, quickPass);
-      if (res.success) {
-        setSuccessMsg(`Xush kelibsiz, ${res.user.name}!`);
-      } else {
-        setErrorMsg(res.message || "Xatolik yuz berdi");
-        setLoading(false);
-      }
-    }, 300);
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#080c14] text-slate-100 flex items-center justify-center p-4 relative overflow-hidden select-none">
       {/* Background ambient lighting */}
@@ -109,8 +90,17 @@ const LoginScreen = () => {
         {/* Brand header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 p-0.5 shadow-2xl shadow-amber-500/25 mb-4 ring-1 ring-white/20">
-            <div className="w-full h-full bg-[#0b0f19] rounded-[22px] flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="HB Music" className="w-12 h-12 object-cover" />
+            <div className="w-full h-full bg-[#0b0f19] rounded-[22px] flex items-center justify-center overflow-hidden font-black text-amber-500 text-2xl tracking-tighter">
+              {!logoImgError ? (
+                <img
+                  src="/logo.png"
+                  alt="HB"
+                  onError={() => setLogoImgError(true)}
+                  className="w-12 h-12 object-cover rounded-xl"
+                />
+              ) : (
+                <span>HB</span>
+              )}
             </div>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">
@@ -254,44 +244,6 @@ const LoginScreen = () => {
               )}
             </button>
           </form>
-
-          {/* Quick test accounts for easy evaluation */}
-          <div className="mt-6 pt-5 border-t border-slate-800">
-            <div className="text-[11px] font-semibold text-slate-400 mb-2.5 flex items-center justify-between">
-              <span>Tezkor kirish (Bitta bosishda):</span>
-              <span className="text-[10px] text-amber-500 font-bold">1-click demo</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('Muhammad', 'Muhammad02')}
-                className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-left transition-all group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-amber-400">
-                  <FaUser className="text-[10px] text-amber-500 shrink-0" />
-                  <span className="truncate">Muhammad</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5 truncate">
-                  Foydalanuvchi hisobi
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('Humoyun', 'Humoyun12')}
-                className="p-2.5 rounded-2xl bg-amber-950/20 hover:bg-amber-950/40 border border-amber-900/40 hover:border-amber-700/60 text-left transition-all group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 group-hover:text-amber-200">
-                  <FaShieldAlt className="text-[10px] text-amber-400 shrink-0" />
-                  <span className="truncate">Humoyun</span>
-                </div>
-                <div className="text-[10px] text-amber-400/60 mt-0.5 truncate">
-                  Administrator hisobi
-                </div>
-              </button>
-            </div>
-          </div>
 
         </div>
 

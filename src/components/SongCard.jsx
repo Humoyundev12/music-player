@@ -37,17 +37,36 @@ const SongCard = ({
 
   const isForeign = song.language && song.language !== 'uz';
 
-  const handleDownload = (e) => {
+  const handleDownload = async (e) => {
     e.stopPropagation();
-    // Musiqani saqlash / yuklab olish
-    const link = document.createElement('a');
-    link.href = song.audio_url;
-    link.download = `${song.title} - ${song.artist}.mp3`;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!song.audio_url) return;
+
+    // Agar Data URL (Base64) bo'lsa
+    if (song.audio_url.startsWith('data:')) {
+      const link = document.createElement('a');
+      link.href = song.audio_url;
+      link.download = `${song.title} - ${song.artist}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // Agar tashqi havola bo'lsa
+    try {
+      const response = await fetch(song.audio_url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${song.title} - ${song.artist}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    } catch {
+      window.open(song.audio_url, '_blank');
+    }
   };
 
   return (
